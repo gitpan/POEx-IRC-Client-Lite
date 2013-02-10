@@ -1,0 +1,287 @@
+# NAME
+
+POEx::IRC::Client::Lite - Minimalist POE IRC interface
+
+# SYNOPSIS
+
+    package MyClient;
+    use POE;
+    use POEx::IRC::Client::Lite;
+    use IRC::Toolkit;
+
+    my @channels = ( '#otw', '#eris' );
+
+    POE::Session->create(
+      package_states => [
+        MyClient => [ qw/
+          _start
+          recv_irc_001
+          recv_irc_public_msg
+          recv_irc_ctcp_version
+        / ],
+      ],
+    );
+
+    sub _start {
+      my ($kern, $heap) = @_[KERNEL, HEAP];
+
+    $heap->{irc} = POEx::IRC::Client::Lite->new(
+      event_prefix => 'recv_',
+      server  => $server,
+      nick    => $nickname,
+      username => $username,
+    );
+
+      $heap->{irc}->connect;
+    }
+
+    sub recv_irc_001 {
+      my ($kern, $heap) = @_[KERNEL, HEAP];
+
+      $heap->{irc}->join(@channels)->privmsg(
+        join(',', @channels), "hello!"
+      );
+    }
+
+    sub recv_irc_public_msg {
+      my ($kern, $heap) = @_[KERNEL, HEAP];
+      my $event = $_[ARG0];
+
+    my ($target, $string) = @{ $event->params };
+    my $from = parse_user( $event->prefix );
+
+      if (lc($string||'') eq 'hello') {
+        $heap->{irc}->privmsg($target, "hello there, $from")
+      }
+    }
+
+    sub recv_irc_ctcp_version {
+      my ($kern, $heap) = @_[KERNEL, HEAP];
+      my $event = $_[ARG0];
+
+    my $from = parse_user( $event->prefix );
+
+      $heap->{irc}->notice( $from =>
+        ctcp_quote("VERSION a silly Client::Lite example")
+      );
+    }
+
+# DESCRIPTION
+
+A light-weight, pluggable IRC client library using [POEx::IRC::Backend](http://search.cpan.org/perldoc?POEx::IRC::Backend) and
+[IRC::Toolkit](http://search.cpan.org/perldoc?IRC::Toolkit).
+
+No state is maintained; POEx::IRC::Client::Lite provides a
+minimalist interface to IRC and serves as a base class for stateful clients.
+
+This is early development software pulled out of a much larger in-progress
+project.
+
+__See [POE::Component::IRC](http://search.cpan.org/perldoc?POE::Component::IRC) for a more mature POE IRC client library.__
+
+## new
+
+    my $irc = POEx::IRC::Client::Lite->new(
+      event_prefix => $prefix,
+      server    => $server,
+      nick      => $nickname,
+      username  => $username,
+    );
+
+Create a new Client::Lite instance. Optional arguments are:
+
+- bindaddr
+
+    Local address to bind to.
+
+- ipv6
+
+    Boolean value indicating whether to prefer IPv6.
+
+- port
+
+    Remote port to use (defaults to 6667).
+
+- reconnect
+
+    Reconnection attempt delay, in seconds.
+
+## stop
+
+    $irc->stop;
+
+Disconnect, stop the Emitter, and purge the plugin pipeline.
+
+## IRC Methods
+
+IRC-related methods can be called via normal method dispatch or sent as a POE
+event:
+
+    ## These are equivalent:
+    $irc->send( $ircevent );
+    $irc->yield( 'send', $ircevent );
+    $poe_kernel->post( $irc_session_id, 'send', $ircevent );
+
+Methods that dispatch to IRC return `$self`, so they can be chained:
+
+    $irc->connect->join(@channels)->privmsg(
+      join(',', @channels),
+      'hello there!'
+    );
+
+## connect
+
+    $irc->connect;
+
+Attempt an outgoing connection.
+
+## disconnect
+
+    $irc->disconnect($message);
+
+Quit IRC and shut down the wheel.
+
+## send
+
+    use IRC::Message::Object 'ircmsg';
+    $irc->send(
+      ircmsg(
+        command => 'oper',
+        params  => [ $user, $passwd ],
+      )
+    );
+
+    ## ... or a raw HASH:
+    $irc->send(
+      {
+        command => 'oper',
+        params  => [ $user, $passwd ],
+      }
+    )
+
+    ## ... or a raw line:
+    $irc->send_raw_line('PRIVMSG avenj :some things');
+
+Use `send()` to send an [IRC::Message::Object](http://search.cpan.org/perldoc?IRC::Message::Object) or a compatible
+HASH; this method will also take a list of events in either of those formats.
+
+Use `send_raw_line()` to send a single raw IRC line. This is rarely a good
+idea; [POEx::IRC::Backend](http://search.cpan.org/perldoc?POEx::IRC::Backend) provides an IRCv3-capable filter.
+
+## privmsg
+
+    $irc->privmsg( $target, $string );
+
+Sends a PRIVMSG to the specified target.
+
+## notice
+
+    $irc->notice( $target, $string );
+
+Sends a NOTICE to the specified target.
+
+## ctcp
+
+    $irc->ctcp( $target, $type, @params );
+
+Encodes and sends a CTCP __request__ to the target.
+(To send a CTCP __reply__, send a ["notice"](#notice) that has been quoted via
+["ctcp\_quote" in IRC::Toolkit::CTCP](http://search.cpan.org/perldoc?IRC::Toolkit::CTCP#ctcp\_quote).)
+
+## mode
+
+    $irc->mode( $channel, $modestring );
+
+Sends a MODE for the specified target.
+
+## join
+
+    $irc->join( $channel );
+
+Attempts to join the specified channel.
+
+## part
+
+    $irc->part( $channel, $message );
+
+Attempts to leave the specified channel with an optional PART message.
+
+
+
+# Emitted Events
+
+All IRC events are emitted as 'irc\_$cmd' e.g. 'irc\_005' (ISUPPORT) or
+'irc\_mode' with a few notable exceptions, detailed below.
+
+`$_[ARG0]` is the [IRC::Message::Object](http://search.cpan.org/perldoc?IRC::Message::Object).
+
+## irc\_private\_message
+
+Emitted for PRIVMSG-type messages not covered by ["irc\_public\_message"](#irc\_public\_message).
+
+## irc\_public\_message
+
+Emitted for PRIVMSG-type messages that appear to be destined for a channel
+target.
+
+## irc\_ctcp
+
+Emitted for incoming CTCP requests.
+
+`$_[ARG0]` is the [IRC::Message::Object](http://search.cpan.org/perldoc?IRC::Message::Object) produced by
+["ctcp\_extract" in IRC::Toolkit::CTCP](http://search.cpan.org/perldoc?IRC::Toolkit::CTCP#ctcp\_extract).
+
+An example of sending a CTCP reply lives in ["SYNOPSIS"](#SYNOPSIS).
+See [IRC::Toolkit::CTCP](http://search.cpan.org/perldoc?IRC::Toolkit::CTCP) for CTCP-related helpers.
+
+## irc\_ctcpreply
+
+Emitted for incoming CTCP replies.
+
+Mirrors the behavior of ["irc\_ctcp"](#irc\_ctcp)
+
+# Pluggable Events
+
+These are events explicitly dispatched to plugins 
+via ["process" in MooX::Role::POE::Emitter](http://search.cpan.org/perldoc?MooX::Role::POE::Emitter#process); 
+see [MooX::Role::POE::Emitter](http://search.cpan.org/perldoc?MooX::Role::POE::Emitter) and [MooX::Role::Pluggable](http://search.cpan.org/perldoc?MooX::Role::Pluggable) for more on
+making use of plugins.
+
+## preregister
+
+Dispatched to plugins when an outgoing connection has been established, 
+but prior to registration.
+
+The first argument is the [POEx::IRC::Backend::Connect](http://search.cpan.org/perldoc?POEx::IRC::Backend::Connect) object.
+
+Returning EAT\_ALL (see [MooX::Role::Pluggable::Constants](http://search.cpan.org/perldoc?MooX::Role::Pluggable::Constants)) to Client::Lite
+will terminate the connection without registering.
+
+## outgoing
+
+Dispatched to plugins prior to sending output.
+
+The first argument is the item being sent. Note that no sanity checks are
+performed on the item(s) at this stage (this is done after items are passed to
+the [POEx::IRC::Backend](http://search.cpan.org/perldoc?POEx::IRC::Backend) instance) -- your plugin's handler could receive a
+HASH, an [IRC::Message::Object](http://search.cpan.org/perldoc?IRC::Message::Object), a raw line, or something invalid.
+
+Returning EAT\_ALL will skip sending the item.
+
+# SEE ALSO
+
+[POE::Component::IRC](http://search.cpan.org/perldoc?POE::Component::IRC), a fully-featured POE IRC client library
+
+[IRC::Toolkit](http://search.cpan.org/perldoc?IRC::Toolkit)
+
+[POEx::IRC::Backend](http://search.cpan.org/perldoc?POEx::IRC::Backend)
+
+[POE::Filter::IRCv3](http://search.cpan.org/perldoc?POE::Filter::IRCv3)
+
+[MooX::Role::POE::Emitter](http://search.cpan.org/perldoc?MooX::Role::POE::Emitter)
+
+[MooX::Role::Pluggable](http://search.cpan.org/perldoc?MooX::Role::Pluggable)
+
+# AUTHOR
+
+Jon Portnoy <avenj@cobaltirc.org>
