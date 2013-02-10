@@ -1,6 +1,6 @@
 package POEx::IRC::Client::Lite;
 {
-  $POEx::IRC::Client::Lite::VERSION = '0.001001';
+  $POEx::IRC::Client::Lite::VERSION = '0.001002';
 }
 
 use Carp 'confess';
@@ -724,9 +724,10 @@ Emitted for PRIVMSG-type messages not covered by L</irc_public_message>.
 Emitted for PRIVMSG-type messages that appear to be destined for a channel
 target.
 
-=head2 irc_ctcp
+=head2 irc_ctcp_TYPE
 
-Emitted for incoming CTCP requests.
+Emitted for incoming CTCP requests. TYPE is the request type, such as
+'version'
 
 C<$_[ARG0]> is the L<IRC::Message::Object> produced by
 L<IRC::Toolkit::CTCP/ctcp_extract>.
@@ -734,7 +735,7 @@ L<IRC::Toolkit::CTCP/ctcp_extract>.
 An example of sending a CTCP reply lives in L</SYNOPSIS>.
 See L<IRC::Toolkit::CTCP> for CTCP-related helpers.
 
-=head2 irc_ctcpreply
+=head2 irc_ctcpreply_TYPE
 
 Emitted for incoming CTCP replies.
 

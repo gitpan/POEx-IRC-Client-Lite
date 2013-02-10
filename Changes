@@ -1,4 +1,7 @@
 # Changes for POEx::IRC::Client::Lite
 
+0.001002
+  Documentation fixes regarding CTCP events
+
 0.001001
-  Initial release.
+  Initial release

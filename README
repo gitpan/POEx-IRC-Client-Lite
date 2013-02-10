@@ -200,8 +200,9 @@ Emitted Events
     Emitted for PRIVMSG-type messages that appear to be destined for a
     channel target.
 
-  irc_ctcp
-    Emitted for incoming CTCP requests.
+  irc_ctcp_TYPE
+    Emitted for incoming CTCP requests. TYPE is the request type, such as
+    'version'
 
     $_[ARG0] is the IRC::Message::Object produced by "ctcp_extract" in
     IRC::Toolkit::CTCP.
@@ -209,7 +210,7 @@ Emitted Events
     An example of sending a CTCP reply lives in "SYNOPSIS". See
     IRC::Toolkit::CTCP for CTCP-related helpers.
 
-  irc_ctcpreply
+  irc_ctcpreply_TYPE
     Emitted for incoming CTCP replies.
 
     Mirrors the behavior of "irc_ctcp"

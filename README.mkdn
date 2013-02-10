@@ -224,9 +224,10 @@ Emitted for PRIVMSG-type messages not covered by ["irc\_public\_message"](#irc\_
 Emitted for PRIVMSG-type messages that appear to be destined for a channel
 target.
 
-## irc\_ctcp
+## irc\_ctcp\_TYPE
 
-Emitted for incoming CTCP requests.
+Emitted for incoming CTCP requests. TYPE is the request type, such as
+'version'
 
 `$_[ARG0]` is the [IRC::Message::Object](http://search.cpan.org/perldoc?IRC::Message::Object) produced by
 ["ctcp\_extract" in IRC::Toolkit::CTCP](http://search.cpan.org/perldoc?IRC::Toolkit::CTCP#ctcp\_extract).
@@ -234,7 +235,7 @@ Emitted for incoming CTCP requests.
 An example of sending a CTCP reply lives in ["SYNOPSIS"](#SYNOPSIS).
 See [IRC::Toolkit::CTCP](http://search.cpan.org/perldoc?IRC::Toolkit::CTCP) for CTCP-related helpers.
 
-## irc\_ctcpreply
+## irc\_ctcpreply\_TYPE
 
 Emitted for incoming CTCP replies.
 

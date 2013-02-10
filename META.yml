@@ -28,4 +28,4 @@ requires:
   strictures: 1
 resources:
   repository: git://github.com/avenj/poex-irc-client-lite.git
-version: 0.001001
+version: 0.001002
