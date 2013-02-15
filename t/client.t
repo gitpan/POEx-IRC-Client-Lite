@@ -5,6 +5,7 @@ use POE;
 use POEx::IRC::Backend;
 
 use IRC::Toolkit::CTCP;
+use IRC::Mode::Set;
 
 use_ok( 'POEx::IRC::Client::Lite' );
 
@@ -19,6 +20,7 @@ my $expected = {
   'client got ctcp_version' => 1,
   'client sent arbitrary'   => 1,
   'client sent QUIT'        => 1,
+  'client sent correct MODE' => 2,
 };
 
 alarm 60;
@@ -164,8 +166,14 @@ sub ircsock_input {
     $got->{'client sent arbitrary'}++;
   }
 
-  if (uc($ev->command) eq 'QUIT') {
+  if ($ev->command eq 'QUIT') {
     $got->{'client sent QUIT'}++;
+  }
+
+  if ($ev->command eq 'MODE') {
+    $got->{'client sent correct MODE'}++
+      if  $ev->params->[0] eq '#target'
+      and $ev->params->[1] eq '+o-o avenj avenj';
   }
 }
 
@@ -183,6 +191,20 @@ sub client_irc_snack {
     {
       command => 'nonsense',
     }
+  );
+
+  ## IRC::Mode::Set
+  $heap->{client}->mode(
+    '#target',
+    IRC::Mode::Set->new(
+      mode_string => '+o-o avenj avenj',
+    )
+  );
+
+  ## Stringy mode
+  $heap->{client}->mode(
+    '#target',
+    '+o-o avenj avenj'
   );
 }
 

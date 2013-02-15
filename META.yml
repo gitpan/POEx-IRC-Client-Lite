@@ -15,6 +15,7 @@ meta-spec:
 name: POEx-IRC-Client-Lite
 requires:
   Carp: 0
+  IRC::Mode::Set: 0
   IRC::Toolkit: 0.07
   Moo: 1
   MooX::Role::POE::Emitter: 0
@@ -23,9 +24,10 @@ requires:
   POE: 1.3
   POE::Filter::IRCv3: 0
   POEx::IRC::Backend: 0.023
+  Scalar::Util: 0
   namespace::clean: 0
   perl: v5.10.1
   strictures: 1
 resources:
   repository: git://github.com/avenj/poex-irc-client-lite.git
-version: 0.001002
+version: 0.002000

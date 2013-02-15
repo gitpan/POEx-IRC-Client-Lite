@@ -23,6 +23,7 @@ my %WriteMakefileArgs = (
   "NAME" => "POEx::IRC::Client::Lite",
   "PREREQ_PM" => {
     "Carp" => 0,
+    "IRC::Mode::Set" => 0,
     "IRC::Toolkit" => "0.07",
     "Moo" => 1,
     "MooX::Role::POE::Emitter" => 0,
@@ -31,10 +32,11 @@ my %WriteMakefileArgs = (
     "POE" => "1.3",
     "POE::Filter::IRCv3" => 0,
     "POEx::IRC::Backend" => "0.023",
+    "Scalar::Util" => 0,
     "namespace::clean" => 0,
     "strictures" => 1
   },
-  "VERSION" => "0.001002",
+  "VERSION" => "0.002000",
   "test" => {
     "TESTS" => "t/*.t"
   }

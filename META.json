@@ -27,6 +27,7 @@
       "runtime" : {
          "requires" : {
             "Carp" : "0",
+            "IRC::Mode::Set" : "0",
             "IRC::Toolkit" : "0.07",
             "Moo" : "1",
             "MooX::Role::POE::Emitter" : "0",
@@ -35,6 +36,7 @@
             "POE" : "1.3",
             "POE::Filter::IRCv3" : "0",
             "POEx::IRC::Backend" : "0.023",
+            "Scalar::Util" : "0",
             "namespace::clean" : "0",
             "perl" : "v5.10.1",
             "strictures" : "1"
@@ -54,6 +56,6 @@
          "web" : "https://github.com/avenj/poex-irc-client-lite"
       }
    },
-   "version" : "0.001002"
+   "version" : "0.002000"
 }
 

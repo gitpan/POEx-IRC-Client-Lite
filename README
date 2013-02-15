@@ -110,7 +110,7 @@ DESCRIPTION
       ## These are equivalent:
       $irc->send( $ircevent );
       $irc->yield( 'send', $ircevent );
-      $poe_kernel->post( $irc_session_id, 'send', $ircevent );
+      $poe_kernel->post( $irc->session_id, 'send', $ircevent );
 
     Methods that dispatch to IRC return $self, so they can be chained:
 
@@ -154,6 +154,11 @@ DESCRIPTION
 
     Use "send_raw_line()" to send a single raw IRC line. This is rarely a
     good idea; POEx::IRC::Backend provides an IRCv3-capable filter.
+
+  set_nick
+        $irc->set_nick( $new_nick );
+
+    Attempt to change the current nickname.
 
   privmsg
       $irc->privmsg( $target, $string );
@@ -213,7 +218,7 @@ Emitted Events
   irc_ctcpreply_TYPE
     Emitted for incoming CTCP replies.
 
-    Mirrors the behavior of "irc_ctcp"
+    Mirrors the behavior of "irc_ctcp_TYPE"
 
 Pluggable Events
     These are events explicitly dispatched to plugins via "process" in

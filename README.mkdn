@@ -120,7 +120,7 @@ event:
     ## These are equivalent:
     $irc->send( $ircevent );
     $irc->yield( 'send', $ircevent );
-    $poe_kernel->post( $irc_session_id, 'send', $ircevent );
+    $poe_kernel->post( $irc->session_id, 'send', $ircevent );
 
 Methods that dispatch to IRC return `$self`, so they can be chained:
 
@@ -167,6 +167,12 @@ HASH; this method will also take a list of events in either of those formats.
 
 Use `send_raw_line()` to send a single raw IRC line. This is rarely a good
 idea; [POEx::IRC::Backend](http://search.cpan.org/perldoc?POEx::IRC::Backend) provides an IRCv3-capable filter.
+
+## set\_nick
+
+    $irc->set_nick( $new_nick );
+
+Attempt to change the current nickname.
 
 ## privmsg
 
@@ -239,7 +245,7 @@ See [IRC::Toolkit::CTCP](http://search.cpan.org/perldoc?IRC::Toolkit::CTCP) for 
 
 Emitted for incoming CTCP replies.
 
-Mirrors the behavior of ["irc\_ctcp"](#irc\_ctcp)
+Mirrors the behavior of ["irc\_ctcp\_TYPE"](#irc\_ctcp\_TYPE)
 
 # Pluggable Events
 

@@ -1,5 +1,10 @@
 # Changes for POEx::IRC::Client::Lite
 
+0.002000
+  Accept IRC::Mode::Set objects via ->mode($target, $obj)
+
+  Add default ->quit() message ("Leaving")
+
 0.001002
   Documentation fixes regarding CTCP events
 

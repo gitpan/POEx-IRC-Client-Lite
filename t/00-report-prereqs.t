@@ -19,6 +19,7 @@ else {
 my @modules = qw(
   Carp
   ExtUtils::MakeMaker
+  IRC::Mode::Set
   IRC::Toolkit
   Moo
   MooX::Role::POE::Emitter
@@ -27,6 +28,7 @@ my @modules = qw(
   POE
   POE::Filter::IRCv3
   POEx::IRC::Backend
+  Scalar::Util
   Test::More
   Test::Pod
   namespace::clean
