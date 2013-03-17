@@ -29,14 +29,15 @@ my %WriteMakefileArgs = (
     "MooX::Role::POE::Emitter" => 0,
     "MooX::Role::Pluggable" => 0,
     "MooX::Types::MooseLike" => "0.15",
+    "MooX::Types::MooseLike::Base" => 0,
     "POE" => "1.3",
     "POE::Filter::IRCv3" => 0,
-    "POEx::IRC::Backend" => "0.023",
+    "POEx::IRC::Backend" => "0.024002",
     "Scalar::Util" => 0,
     "namespace::clean" => 0,
     "strictures" => 1
   },
-  "VERSION" => "0.002000",
+  "VERSION" => "0.002001",
   "test" => {
     "TESTS" => "t/*.t"
   }

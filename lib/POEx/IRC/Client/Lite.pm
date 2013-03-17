@@ -1,6 +1,6 @@
 package POEx::IRC::Client::Lite;
 {
-  $POEx::IRC::Client::Lite::VERSION = '0.002000';
+  $POEx::IRC::Client::Lite::VERSION = '0.002001';
 }
 
 use Carp 'confess';
@@ -54,7 +54,7 @@ has bindaddr => (
   default   => sub {
     my ($self) = @_;
     return '::0' if $self->has_ipv6 and $self->ipv6;
-    return '0.0.0.0'
+    '0.0.0.0'
   },
 );
 
@@ -183,7 +183,7 @@ sub stop {
 ### ircsock_*
 
 sub ircsock_connector_open {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self) = @_[KERNEL, OBJECT];
   my $conn = $_[ARG0];
 
   $self->_set_conn( $conn );
@@ -223,9 +223,9 @@ sub ircsock_connector_open {
 }
 
 sub ircsock_connector_failure {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
-  my $connector = $_[ARG0];
-  my ($op, $errno, $errstr) = @_[ARG1 .. ARG3];
+  my (undef, $self) = @_[KERNEL, OBJECT];
+  #my $connector = $_[ARG0];
+  #my ($op, $errno, $errstr) = @_[ARG1 .. ARG3];
 
   $self->_clear_conn if $self->_has_conn;
 
@@ -236,17 +236,17 @@ sub ircsock_connector_failure {
 }
 
 sub ircsock_disconnect {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self) = @_[KERNEL, OBJECT];
   my ($conn, $str) = @_[ARG0, ARG1];
   
   $self->_clear_conn if $self->_has_conn; 
  
-  $self->emit( 'irc_disconnected', $str );
+  $self->emit( 'irc_disconnected', $str, $conn );
 }
 
 sub ircsock_input {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
-  my ($conn, $ircev) = @_[ARG0, ARG1];
+  my (undef, $self) = @_[KERNEL, OBJECT];
+  my $ircev = $_[ARG1];
 
   return unless $ircev->command;
   $self->emit( 'irc_'.lc($ircev->command), $ircev)
@@ -337,7 +337,7 @@ sub connect {
 }
 
 sub _connect {
-  my ($kern, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self) = @_[KERNEL, OBJECT];
   
   $self->backend->create_connector(
     remoteaddr => $self->server,
@@ -357,7 +357,7 @@ sub disconnect {
 }
 
 sub _disconnect {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self) = @_[KERNEL, OBJECT];
   my $message = $_[ARG0] // 'Leaving';
 
   $self->backend->send(
@@ -383,7 +383,7 @@ sub send {
 }
 
 sub _send {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self) = @_[KERNEL, OBJECT];
   for my $outev (@_[ARG0 .. $#_]) {
     if ($self->process( 'outgoing', $outev ) == EAT_ALL) {
       next
@@ -399,7 +399,7 @@ sub notice {
 }
 
 sub _notice {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self)   = @_[KERNEL, OBJECT];
   my ($target, @data) = @_[ARG0 .. $#_];
   $self->send(
     ircmsg(
@@ -415,7 +415,7 @@ sub privmsg {
 }
 
 sub _privmsg {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self) = @_[KERNEL, OBJECT];
   my ($target, @data) = @_[ARG0 .. $#_];
   $self->send(
     ircmsg(
@@ -431,7 +431,7 @@ sub ctcp {
 }
 
 sub _ctcp {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self) = @_[KERNEL, OBJECT];
   my ($type, $target, @data) = @_[ARG0 .. $#_];
   my $line = join ' ', uc($type), @data;
   my $quoted = ctcp_quote($line);
@@ -449,16 +449,18 @@ sub mode {
 }
 
 sub _mode {
-  my ($kernel, $self)    = @_[KERNEL, OBJECT];
+  my (undef, $self)    = @_[KERNEL, OBJECT];
   my ($target, $mode) = @_[ARG0, ARG1];
 
   if (blessed $mode && $mode->isa('IRC::Mode::Set')) {
     ## FIXME tests for same
     ## FIXME accept an opt to allow passing in MODES= ?
+    ##       don't really want to parse/store isupport here
+    ##       (stateful subclasses should worry about it)
     for my $set ($mode->split_mode_set(4)) {
       $self->mode( $target, $set->mode_string )
     }
-    return
+    return $self
   }
 
   $self->send(
@@ -475,7 +477,7 @@ sub join {
 }
 
 sub _join {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self) = @_[KERNEL, OBJECT];
   my $join_to = CORE::join ',', @_[ARG0 .. $#_];
   $self->send(
     ircmsg(
@@ -491,7 +493,7 @@ sub part {
 }
 
 sub _part {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self)   = @_[KERNEL, OBJECT];
   my ($channel, $msg) = @_[ARG0, ARG1];
   $self->send(
     ircmsg(
@@ -516,7 +518,7 @@ POEx::IRC::Client::Lite - Minimalist POE IRC interface
   use POEx::IRC::Client::Lite;
   use IRC::Toolkit;
 
-  my @channels = ( '#otw', '#eris' );
+  our @channels = ( '#otw', '#eris' );
 
   POE::Session->create(
     package_states => [
@@ -534,9 +536,9 @@ POEx::IRC::Client::Lite - Minimalist POE IRC interface
 
     $heap->{irc} = POEx::IRC::Client::Lite->new(
       event_prefix => 'recv_',
-      server  => $server,
-      nick    => $nickname,
-      username => $username,
+      server  => "irc.perl.org",
+      nick    => "MyNick",
+      username => "myuser",
     );
 
     $heap->{irc}->connect;
@@ -640,19 +642,19 @@ Methods that dispatch to IRC return C<$self>, so they can be chained:
     'hello there!'
   );
 
-=head2 connect
+=head3 connect
 
   $irc->connect;
 
 Attempt an outgoing connection.
 
-=head2 disconnect
+=head3 disconnect
 
   $irc->disconnect($message);
 
 Quit IRC and shut down the wheel.
 
-=head2 send
+=head3 send
 
   use IRC::Message::Object 'ircmsg';
   $irc->send(
@@ -676,28 +678,30 @@ Quit IRC and shut down the wheel.
 Use C<send()> to send an L<IRC::Message::Object> or a compatible
 HASH; this method will also take a list of events in either of those formats.
 
+=head3 send_raw_line
+
 Use C<send_raw_line()> to send a single raw IRC line. This is rarely a good
 idea; L<POEx::IRC::Backend> provides an IRCv3-capable filter.
 
-=head2 set_nick
+=head3 set_nick
 
     $irc->set_nick( $new_nick );
 
 Attempt to change the current nickname.
 
-=head2 privmsg
+=head3 privmsg
 
   $irc->privmsg( $target, $string );
 
 Sends a PRIVMSG to the specified target.
 
-=head2 notice
+=head3 notice
 
   $irc->notice( $target, $string );
 
 Sends a NOTICE to the specified target.
 
-=head2 ctcp
+=head3 ctcp
 
   $irc->ctcp( $target, $type, @params );
 
@@ -705,24 +709,43 @@ Encodes and sends a CTCP B<request> to the target.
 (To send a CTCP B<reply>, send a L</notice> that has been quoted via
 L<IRC::Toolkit::CTCP/"ctcp_quote">.)
 
-=head2 mode
+=head3 mode
 
   $irc->mode( $channel, $modestring );
 
 Sends a MODE for the specified target.
 
-=head2 join
+Takes a channel name as a string and a mode change as either a string or an
+L<IRC::Mode::Set>.
+
+=head3 join
 
   $irc->join( $channel );
 
 Attempts to join the specified channel.
 
-=head2 part
+=head3 part
 
   $irc->part( $channel, $message );
 
 Attempts to leave the specified channel with an optional PART message.
 
+=head2 Attributes
+
+=head3 conn
+
+The L<POEx::IRC::Backend::Connect> instance for our connection.
+
+=head3 nick
+
+The nickname we were spawned with.
+
+This class doesn't track nick changes; if our nick is changed later, ->nick()
+is not updated.
+
+=head3 server
+
+The server we were instructed to connect to.
 
 =head1 Emitted Events
 
@@ -730,6 +753,12 @@ All IRC events are emitted as 'irc_$cmd' e.g. 'irc_005' (ISUPPORT) or
 'irc_mode' with a few notable exceptions, detailed below.
 
 C<$_[ARG0]> is the L<IRC::Message::Object>.
+
+=head2 irc_connector_killed
+
+Emitted if a connection is terminated during L</preregister>.
+
+C<$_[ARG0]> is the L<POEx::IRC::Backend::Connect> object.
 
 =head2 irc_private_message
 
@@ -756,6 +785,14 @@ See L<IRC::Toolkit::CTCP> for CTCP-related helpers.
 Emitted for incoming CTCP replies.
 
 Mirrors the behavior of L</irc_ctcp_TYPE>
+
+=head2 irc_disconnected
+
+Emitted when an IRC connection has been disconnected at the backend.
+
+C<$_[ARG0]> is the disconnect string from L<POEx::IRC::Backend>.
+
+C<$_[ARG1]> is the L<POEx::IRC::Backend::Connect> that was disconnected.
 
 =head1 Pluggable Events
 
@@ -802,5 +839,13 @@ L<MooX::Role::Pluggable>
 =head1 AUTHOR
 
 Jon Portnoy <avenj@cobaltirc.org>
+
+=begin Pod::Coverage
+
+  BUILD
+  N_(?i:[A-Z0-9_])+
+  ircsock_(?i:[A-Z_])+
+
+=end Pod::Coverage
 
 =cut

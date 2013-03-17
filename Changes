@@ -1,5 +1,8 @@
 # Changes for POEx::IRC::Client::Lite
 
+0.002001
+  Test tweaks + depend on newer POEx::IRC::Backend
+
 0.002000
   Accept IRC::Mode::Set objects via ->mode($target, $obj)
 

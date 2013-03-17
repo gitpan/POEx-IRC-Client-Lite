@@ -7,7 +7,7 @@ SYNOPSIS
       use POEx::IRC::Client::Lite;
       use IRC::Toolkit;
 
-      my @channels = ( '#otw', '#eris' );
+      our @channels = ( '#otw', '#eris' );
 
       POE::Session->create(
         package_states => [
@@ -25,9 +25,9 @@ SYNOPSIS
 
         $heap->{irc} = POEx::IRC::Client::Lite->new(
           event_prefix => 'recv_',
-          server  => $server,
-          nick    => $nickname,
-          username => $username,
+          server  => "irc.perl.org",
+          nick    => "MyNick",
+          username => "myuser",
         );
 
         $heap->{irc}->connect;
@@ -119,17 +119,17 @@ DESCRIPTION
         'hello there!'
       );
 
-  connect
+   connect
       $irc->connect;
 
     Attempt an outgoing connection.
 
-  disconnect
+   disconnect
       $irc->disconnect($message);
 
     Quit IRC and shut down the wheel.
 
-  send
+   send
       use IRC::Message::Object 'ircmsg';
       $irc->send(
         ircmsg(
@@ -152,51 +152,73 @@ DESCRIPTION
     Use "send()" to send an IRC::Message::Object or a compatible HASH; this
     method will also take a list of events in either of those formats.
 
+   send_raw_line
     Use "send_raw_line()" to send a single raw IRC line. This is rarely a
     good idea; POEx::IRC::Backend provides an IRCv3-capable filter.
 
-  set_nick
+   set_nick
         $irc->set_nick( $new_nick );
 
     Attempt to change the current nickname.
 
-  privmsg
+   privmsg
       $irc->privmsg( $target, $string );
 
     Sends a PRIVMSG to the specified target.
 
-  notice
+   notice
       $irc->notice( $target, $string );
 
     Sends a NOTICE to the specified target.
 
-  ctcp
+   ctcp
       $irc->ctcp( $target, $type, @params );
 
     Encodes and sends a CTCP request to the target. (To send a CTCP reply,
     send a "notice" that has been quoted via "ctcp_quote" in
     IRC::Toolkit::CTCP.)
 
-  mode
+   mode
       $irc->mode( $channel, $modestring );
 
     Sends a MODE for the specified target.
 
-  join
+    Takes a channel name as a string and a mode change as either a string or
+    an IRC::Mode::Set.
+
+   join
       $irc->join( $channel );
 
     Attempts to join the specified channel.
 
-  part
+   part
       $irc->part( $channel, $message );
 
     Attempts to leave the specified channel with an optional PART message.
+
+  Attributes
+   conn
+    The POEx::IRC::Backend::Connect instance for our connection.
+
+   nick
+    The nickname we were spawned with.
+
+    This class doesn't track nick changes; if our nick is changed later,
+    ->nick() is not updated.
+
+   server
+    The server we were instructed to connect to.
 
 Emitted Events
     All IRC events are emitted as 'irc_$cmd' e.g. 'irc_005' (ISUPPORT) or
     'irc_mode' with a few notable exceptions, detailed below.
 
     $_[ARG0] is the IRC::Message::Object.
+
+  irc_connector_killed
+    Emitted if a connection is terminated during "preregister".
+
+    $_[ARG0] is the POEx::IRC::Backend::Connect object.
 
   irc_private_message
     Emitted for PRIVMSG-type messages not covered by "irc_public_message".
@@ -219,6 +241,13 @@ Emitted Events
     Emitted for incoming CTCP replies.
 
     Mirrors the behavior of "irc_ctcp_TYPE"
+
+  irc_disconnected
+    Emitted when an IRC connection has been disconnected at the backend.
+
+    $_[ARG0] is the disconnect string from POEx::IRC::Backend.
+
+    $_[ARG1] is the POEx::IRC::Backend::Connect that was disconnected.
 
 Pluggable Events
     These are events explicitly dispatched to plugins via "process" in

@@ -12,4 +12,9 @@ eg/client_lite_bot.pl
 lib/POEx/IRC/Client/Lite.pm
 t/00-report-prereqs.t
 t/client.t
+t/release-no-tabs.t
+t/release-pod-coverage.t
+t/release-pod-linkcheck.t
 t/release-pod-syntax.t
+t/release-synopsis.t
+t/release-unused-vars.t
