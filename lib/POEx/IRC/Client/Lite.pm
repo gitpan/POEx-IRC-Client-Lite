@@ -1,15 +1,12 @@
 package POEx::IRC::Client::Lite;
 {
-  $POEx::IRC::Client::Lite::VERSION = '0.002001';
+  $POEx::IRC::Client::Lite::VERSION = '0.002002';
 }
-
-use Carp 'confess';
 use strictures 1;
 
-use Moo;
-use MooX::Types::MooseLike::Base ':all';
-use POE;
+use Carp 'confess';
 
+use POE;
 use POEx::IRC::Backend;
 
 use IRC::Message::Object 'ircmsg';
@@ -18,10 +15,16 @@ use IRC::Toolkit::CTCP;
 
 use POE::Filter::IRCv3;
 
-use MooX::Role::Pluggable::Constants;
-with 'MooX::Role::POE::Emitter';
-
 use Scalar::Util 'blessed';
+
+use Types::Standard -all;
+
+use MooX::Role::Pluggable::Constants;
+
+
+use namespace::clean;
+use Moo;
+with 'MooX::Role::POE::Emitter';
 
 has server => (
   required  => 1,
@@ -130,7 +133,7 @@ has conn => (
   lazy      => 1,
   weak_ref  => 1,
   is        => 'ro',
-  isa       => Defined,
+  isa       => Object,
   writer    => '_set_conn',
   predicate => '_has_conn',
   clearer   => '_clear_conn',
@@ -171,26 +174,25 @@ sub BUILD {
 
 sub _emitter_started {
   my ($kernel, $self) = @_[KERNEL, OBJECT];
-  $kernel->post( $self->backend->spawn->session_id, 'register' );
+  $kernel->post( $self->backend->spawn->session_id => 'register' );
 }
 
 sub stop {
   my ($self) = @_;
-  $poe_kernel->post( $self->backend->session_id, 'shutdown' );
+  $poe_kernel->post( $self->backend->session_id => 'shutdown' );
   $self->_shutdown_emitter;
 }
 
 ### ircsock_*
 
 sub ircsock_connector_open {
-  my (undef, $self) = @_[KERNEL, OBJECT];
-  my $conn = $_[ARG0];
+  my (undef, $self, $conn) = @_[KERNEL, OBJECT, ARG0];
 
   $self->_set_conn( $conn );
 
-  if ($self->process( 'preregister', $conn ) == EAT_ALL) {
+  if ($self->process( preregister => $conn ) == EAT_ALL) {
     $self->_clear_conn;
-    $self->emit( 'irc_connector_killed', $conn );
+    $self->emit( irc_connector_killed => $conn );
     return
   }
 
@@ -219,7 +221,7 @@ sub ircsock_connector_open {
     ),
   );
 
-  $self->emit( 'irc_connected', $conn );
+  $self->emit( irc_connected => $conn );
 }
 
 sub ircsock_connector_failure {
@@ -229,27 +231,25 @@ sub ircsock_connector_failure {
 
   $self->_clear_conn if $self->_has_conn;
 
-  $self->emit( 'irc_connector_failed', @_[ARG0 .. $#_] );
+  $self->emit( irc_connector_failed => @_[ARG0 .. $#_] );
   
-  $self->timer( $self->reconnect, 'connect')
-    unless !$self->reconnect;
+  $self->timer( $self->reconnect => 'connect') unless !$self->reconnect;
 }
 
 sub ircsock_disconnect {
   my (undef, $self) = @_[KERNEL, OBJECT];
-  my ($conn, $str) = @_[ARG0, ARG1];
+  my ($conn, $str)  = @_[ARG0, ARG1];
   
   $self->_clear_conn if $self->_has_conn; 
  
-  $self->emit( 'irc_disconnected', $str, $conn );
+  $self->emit( irc_disconnected => $str, $conn );
 }
 
 sub ircsock_input {
-  my (undef, $self) = @_[KERNEL, OBJECT];
-  my $ircev = $_[ARG1];
+  my (undef, $self, $ircev) = @_[KERNEL, OBJECT, ARG1];
 
   return unless $ircev->command;
-  $self->emit( 'irc_'.lc($ircev->command), $ircev)
+  $self->emit( 'irc_'.lc($ircev->command) => $ircev)
 }
 
 
@@ -291,20 +291,20 @@ sub N_irc_privmsg {
   my $ircev = ${ $_[0] };
 
   if (my $ctcp_ev = ctcp_extract($ircev)) {
-    $self->emit_now( 'irc_'.$ctcp_ev->command, $ctcp_ev );
+    $self->emit_now( 'irc_'.$ctcp_ev->command => $ctcp_ev );
     return EAT_ALL
   }
 
   if ($ircev->has_tags && $ircev->get_tag('intent') eq 'ACTION') {
-    $self->emit_now( 'irc_ctcp_action', $ircev );
+    $self->emit_now( irc_ctcp_action => $ircev );
     return EAT_ALL
   }
 
   my $prefix = substr $ircev->params->[0], 0, 1;
   if (grep {; $_ eq $prefix } ('#', '&', '+') ) {
-    $self->emit_now( 'irc_public_msg', $ircev )
+    $self->emit_now( irc_public_msg => $ircev )
   } else {
-    $self->emit_now( 'irc_private_msg', $ircev )
+    $self->emit_now( irc_private_msg => $ircev )
   }
 
   EAT_ALL
@@ -315,7 +315,7 @@ sub N_irc_notice {
   my $ircev = ${ $_[0] };
 
   if (my $ctcp_ev = ctcp_extract($ircev)) {
-    $self->emit_now( 'irc_'.$ctcp_ev->command, $ctcp_ev );
+    $self->emit_now( 'irc_'.$ctcp_ev->command => $ctcp_ev );
     return EAT_ALL
   }
 
@@ -333,7 +333,7 @@ sub N_irc_notice {
 
 sub connect {
   my $self = shift;
-  $self->yield( 'connect', @_ )
+  $self->yield( connect => @_ )
 }
 
 sub _connect {
@@ -353,7 +353,7 @@ sub _connect {
 
 sub disconnect {
   my $self = shift;
-  $self->yield( 'disconnect', @_ )
+  $self->yield( disconnect => @_ )
 }
 
 sub _disconnect {
@@ -379,13 +379,13 @@ sub send_raw_line {
 
 sub send {
   my $self = shift;
-  $self->yield( 'send', @_ )
+  $self->yield( send => @_ )
 }
 
 sub _send {
   my (undef, $self) = @_[KERNEL, OBJECT];
   for my $outev (@_[ARG0 .. $#_]) {
-    if ($self->process( 'outgoing', $outev ) == EAT_ALL) {
+    if ($self->process( outgoing => $outev ) == EAT_ALL) {
       next
     }
     $self->backend->send( $outev, $self->conn->wheel_id )
@@ -395,7 +395,7 @@ sub _send {
 ## Sugar, and POE-dispatchable counterparts.
 sub notice {
   my $self = shift;
-  $self->yield( 'notice', @_ )
+  $self->yield( notice => @_ )
 }
 
 sub _notice {
@@ -411,11 +411,11 @@ sub _notice {
 
 sub privmsg {
   my $self = shift;
-  $self->yield( 'privmsg', @_ )
+  $self->yield( privmsg => @_ )
 }
 
 sub _privmsg {
-  my (undef, $self) = @_[KERNEL, OBJECT];
+  my (undef, $self)   = @_[KERNEL, OBJECT];
   my ($target, @data) = @_[ARG0 .. $#_];
   $self->send(
     ircmsg(
@@ -427,7 +427,7 @@ sub _privmsg {
 
 sub ctcp {
   my $self = shift;
-  $self->yield( 'ctcp', @_ )
+  $self->yield( ctcp => @_ )
 }
 
 sub _ctcp {
@@ -445,11 +445,11 @@ sub _ctcp {
 
 sub mode {
   my $self = shift;
-  $self->yield( 'mode', @_ )
+  $self->yield( mode => @_ )
 }
 
 sub _mode {
-  my (undef, $self)    = @_[KERNEL, OBJECT];
+  my (undef, $self)   = @_[KERNEL, OBJECT];
   my ($target, $mode) = @_[ARG0, ARG1];
 
   if (blessed $mode && $mode->isa('IRC::Mode::Set')) {
@@ -473,7 +473,7 @@ sub _mode {
 
 sub join {
   my $self = shift;
-  $self->yield( 'join', @_ )
+  $self->yield( join => @_ )
 }
 
 sub _join {
@@ -489,7 +489,7 @@ sub _join {
 
 sub part {
   my $self = shift;
-  $self->yield( 'part', @_ )
+  $self->yield( part => @_ )
 }
 
 sub _part {

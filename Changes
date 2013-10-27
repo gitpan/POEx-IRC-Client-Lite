@@ -1,15 +1,29 @@
 # Changes for POEx::IRC::Client::Lite
 
-0.002001
-  Test tweaks + depend on newer POEx::IRC::Backend
+0.002002 2013-10-27
 
-0.002000
-  Accept IRC::Mode::Set objects via ->mode($target, $obj)
+  - No significant code changes
+  
+  - Fix 'Changes' to conform to CPAN::Changes::Spec
 
-  Add default ->quit() message ("Leaving")
+  - Switch to Type::Tiny
 
-0.001002
-  Documentation fixes regarding CTCP events
+  - Use namespace::clean
 
-0.001001
-  Initial release
+0.002001 2013-03-17
+
+  - Test tweaks + depend on newer POEx::IRC::Backend
+
+0.002000 2013-02-15
+
+  - Accept IRC::Mode::Set objects via ->mode($target, $obj)
+
+  - Add default ->quit() message ("Leaving")
+
+0.001002 2013-02-10
+
+  - Documentation fixes regarding CTCP events
+
+0.001001 2013-02-10
+
+  - Initial release

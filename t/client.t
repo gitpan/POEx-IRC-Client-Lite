@@ -99,7 +99,7 @@ sub ircsock_listener_created {
   my $listener = $_[ARG0];
 
   pass("Got listener_created");
-  diag("Starting client");
+  note("Starting client");
 
   $heap->{client} = POEx::IRC::Client::Lite->new(
     event_prefix => 'client_',

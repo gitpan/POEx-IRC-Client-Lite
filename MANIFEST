@@ -8,10 +8,11 @@ README
 README.mkdn
 TODO
 dist.ini
-eg/client_lite_bot.pl
+examples/client_lite_bot.pl
 lib/POEx/IRC/Client/Lite.pm
 t/00-report-prereqs.t
 t/client.t
+t/release-cpan-changes.t
 t/release-no-tabs.t
 t/release-pod-coverage.t
 t/release-pod-linkcheck.t

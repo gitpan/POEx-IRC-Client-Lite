@@ -12,18 +12,16 @@ use List::Util qw/max/;
 my @modules = qw(
   Carp
   ExtUtils::MakeMaker
-  IRC::Mode::Set
   IRC::Toolkit
   Moo
   MooX::Role::POE::Emitter
   MooX::Role::Pluggable
-  MooX::Types::MooseLike
-  MooX::Types::MooseLike::Base
   POE
   POE::Filter::IRCv3
   POEx::IRC::Backend
   Scalar::Util
   Test::More
+  Types::Standard
   namespace::clean
   perl
   strictures
